@@ -10,15 +10,10 @@ import (
 var noRatings = flag.Bool("no-ratings", false, "Disable ratings service")
 var noPlaycounts = flag.Bool("no-playcounts", false, "Disable playcounts service")
 
-func startService(host string, port uint, service func(*mpdfav.MPDClient), wg *sync.WaitGroup) {
+func startMpdService(mpdc *MPDClient, service func(*mpdfav.MPDClient), wg *sync.WaitGroup) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		mpdc, err := mpdfav.Connect(host, port)
-		defer mpdc.Close()
-		if err != nil {
-			panic(err)
-		}
 		service(mpdc)
 	}()
 }
@@ -26,12 +21,18 @@ func startService(host string, port uint, service func(*mpdfav.MPDClient), wg *s
 func main() {
 	var wg sync.WaitGroup
 
+	mpdc, err := mpdfav.Connect("localhost", 6600)
+	if err != nil {
+		panic(err)
+	}
+	defer mpdc.Close()
+
 	if !*noPlaycounts {
-		startService("localhost", 6600, mpdfav.RecordPlayCounts, &wg)
+		startMpdService(mpdc, mpdfav.RecordPlayCounts, &wg)
 		log.Print("Started Playcounts service... ")
 	}
 	if !*noRatings {
-		startService("localhost", 6600, mpdfav.ListenRatings, &wg)
+		startMpdService(mpdc, mpdfav.ListenRatings, &wg)
 		log.Print("Started Ratings service... ")
 	}
 
