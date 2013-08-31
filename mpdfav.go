@@ -2,8 +2,9 @@ package main
 
 import (
 	"flag"
-	"log"
+	. "github.com/vincent-petithory/mpdclient"
 	. "github.com/vincent-petithory/mpdfav"
+	"log"
 	"sync"
 )
 
