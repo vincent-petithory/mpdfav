@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	. "github.com/vincent-petithory/mpdclient"
-	. "github.com/vincent-petithory/mpdfav"
 	"log"
 	"sync"
 )
