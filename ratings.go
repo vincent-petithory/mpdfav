@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	ratingSticker  = "rating"
+	RatingSticker  = "rating"
 	RatingsChannel = "ratings"
 )
 
@@ -35,7 +35,7 @@ func rateSong(songInfo *Info, rateMsg string, mpdc *MPDClient) (int, error) {
 	value, err := mpdc.StickerGet(
 		StickerSongType,
 		(*songInfo)["file"],
-		ratingSticker,
+		RatingSticker,
 	)
 	if err != nil {
 		return -1, err
@@ -53,13 +53,13 @@ func rateSong(songInfo *Info, rateMsg string, mpdc *MPDClient) (int, error) {
 	err = mpdc.StickerSet(
 		StickerSongType,
 		(*songInfo)["file"],
-		ratingSticker,
+		RatingSticker,
 		strconv.Itoa(intval),
 	)
 	return intval, err
 }
 
-func ListenRatings(mpdc *MPDClient) {
+func ListenRatings(mpdc *MPDClient, channels []chan songMetadata) {
 	err := mpdc.Subscribe(RatingsChannel)
 	if err != nil {
 		panic(err)
@@ -123,17 +123,24 @@ func ListenRatings(mpdc *MPDClient) {
 			if !clientExists {
 				songInfo, err := mpdc.CurrentSong()
 				if err == nil {
-					if rating, err := rateSong(songInfo, channelMessage.Message, mpdc); err != nil {
-						log.Println(err)
-					} else {
+					if rating, err := rateSong(songInfo, channelMessage.Message, mpdc); err == nil {
 						clientsSentRating = append(clientsSentRating, thisClientId)
-						log.Println(fmt.Sprintf("Ratings: %s rating=%d", (*songInfo)["Title"], rating))
+						log.Printf("Ratings: %s rating=%d\n", (*songInfo)["Title"], rating)
+						songMetadata := songMetadata{(*songInfo)["file"], RatingSticker, strconv.Itoa(rating)}
+						for _, channel := range channels {
+							c := channel
+							go func() {
+								c <- songMetadata
+							}()
+						}
+					} else {
+						log.Println(err)
 					}
 				} else {
 					log.Println(err)
 				}
 			} else {
-				log.Println(fmt.Sprintf("Client %s already rated", thisClientId))
+				log.Printf("Client %s already rated\n", thisClientId)
 			}
 		case statusInfo := <-playerCh:
 			if currentSongId != statusInfo["songid"] {

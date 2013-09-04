@@ -11,7 +11,7 @@ import (
 const (
 	songPlayedThresholdSeconds = 10
 	tickMillis                 = 900
-	playcountSticker           = "playcount"
+	PlaycountSticker           = "playcount"
 )
 
 type songStatusInfo struct {
@@ -23,7 +23,7 @@ func incSongPlayCount(songInfo *Info, mpdc *MPDClient) (int, error) {
 	value, err := mpdc.StickerGet(
 		StickerSongType,
 		(*songInfo)["file"],
-		playcountSticker,
+		PlaycountSticker,
 	)
 	if err != nil {
 		return -1, err
@@ -39,7 +39,7 @@ func incSongPlayCount(songInfo *Info, mpdc *MPDClient) (int, error) {
 	err = mpdc.StickerSet(
 		StickerSongType,
 		(*songInfo)["file"],
-		playcountSticker,
+		PlaycountSticker,
 		strconv.Itoa(intval),
 	)
 	return intval, err
@@ -53,51 +53,57 @@ func considerSongPlayed(statusInfo *Info, limit int) bool {
 	return (total - current) < limit
 }
 
-func checkSongChange(si *songStatusInfo, mpdc *MPDClient) error {
+func checkSongChange(si *songStatusInfo, mpdc *MPDClient) (bool, error) {
 	info, err := mpdc.Status()
+	if err != nil {
+		return false, err
+	}
+	defer func() {
+		si.StatusInfo = *info
+	}()
+
+	if (*info)["songid"] != si.StatusInfo["songid"] {
+		if played := considerSongPlayed(&si.StatusInfo, songPlayedThresholdSeconds); played {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func processStateUpdate(si *songStatusInfo, mpdc *MPDClient, channels []chan songMetadata) error {
+	changed, err := checkSongChange(si, mpdc)
 	if err != nil {
 		return err
 	}
-
-	if (*info)["songid"] != si.StatusInfo["songid"] {
-		played := considerSongPlayed(&si.StatusInfo, songPlayedThresholdSeconds)
-
-		if played {
-			playcount, err := incSongPlayCount(&si.SongInfo, mpdc)
-			if err != nil {
-				return err
-			}
-			log.Println(fmt.Sprintf("Playcounts: %s playcount=%d", si.SongInfo["Title"], playcount))
+	if changed {
+		playcount, err := incSongPlayCount(&si.SongInfo, mpdc)
+		if err != nil {
+			return err
 		}
-	}
-	si.StatusInfo = *info
-	return nil
-}
 
-func updateSongInfo(si *songStatusInfo, mpdc *MPDClient) error {
+		songMetadata := songMetadata{si.SongInfo["file"], PlaycountSticker, strconv.Itoa(playcount)}
+		for _, channel := range channels {
+			c := channel
+			go func() {
+				c <- songMetadata
+			}()
+		}
+		log.Println(fmt.Sprintf("Playcounts: %s playcount=%d", si.SongInfo["Title"], playcount))
+	}
+	// We store the current song after processing,
+	// since that should be the next song playing already.
 	songInfo, err := mpdc.CurrentSong()
 	if err != nil {
 		return err
 	}
 	si.SongInfo = *songInfo
-	return nil
-}
-
-func processStateUpdate(si *songStatusInfo, mpdc *MPDClient) error {
-	err := checkSongChange(si, mpdc)
-	if err != nil {
-		return err
-	}
-	// We store the current song after processing,
-	// since that should be the next song playing already.
-	err = updateSongInfo(si, mpdc)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func RecordPlayCounts(mpdc *MPDClient) {
+func RecordPlayCounts(mpdc *MPDClient, channels []chan songMetadata) {
 	statusInfo, err := mpdc.Status()
 	if err != nil {
 		panic(err)
@@ -120,14 +126,14 @@ func RecordPlayCounts(mpdc *MPDClient) {
 		case <-pollCh:
 			if !ignorePoll {
 				log.Println("Polling status")
-				err = processStateUpdate(&si, mpdc)
+				err = processStateUpdate(&si, mpdc, channels)
 				if err != nil {
 					log.Println(err)
 				}
 			}
 		case <-idleSub.Ch:
 			log.Println("Fetching status on response to 'idle'")
-			err := processStateUpdate(&si, mpdc)
+			err := processStateUpdate(&si, mpdc, channels)
 			if err != nil {
 				log.Println(err)
 			}
