@@ -4,6 +4,7 @@ import (
 	"log"
 	. "github.com/vincent-petithory/mpdclient"
 	"sort"
+	"strconv"
 )
 
 type songMetadata struct {
@@ -37,6 +38,13 @@ func generateBestRatedSongs(mpdc *MPDClient, playlistName string, max int) songM
 		}
 		sort.Sort(sort.Reverse(songStickers))
 		for i, songSticker := range songStickers {
+			rating, err := strconv.Atoi(songSticker.Value)
+			if err != nil {
+				continue
+			}
+			if rating < 1 {
+				continue
+			}
 			mpdc.PlaylistAdd(playlistName, songSticker.Uri)
 			if i >= max {
 				break
@@ -58,6 +66,10 @@ func generateMostPlayedSongs(mpdc *MPDClient, playlistName string, max int) song
 		}
 		sort.Sort(sort.Reverse(songStickers))
 		for i, songSticker := range songStickers {
+			_, err = strconv.Atoi(songSticker.Value)
+			if err != nil {
+				continue
+			}
 			mpdc.PlaylistAdd(playlistName, songSticker.Uri)
 			if i >= max {
 				break
