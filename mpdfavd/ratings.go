@@ -63,7 +63,6 @@ func ListenRatings(mpdc *MPDClient, channels []chan SongSticker) {
 			subsystem := <-idleSub.Ch
 			switch subsystem {
 			case "message":
-				log.Println(">>> message event")
 				msgs, err := mpdc.ReadMessages()
 				if err != nil {
 					log.Println(err)
@@ -73,7 +72,6 @@ func ListenRatings(mpdc *MPDClient, channels []chan SongSticker) {
 					}
 				}
 			case "player":
-				log.Println(">>> player event")
 				statusInfo, err := mpdc.Status()
 				if err != nil {
 					log.Println(err)
@@ -125,7 +123,6 @@ func ListenRatings(mpdc *MPDClient, channels []chan SongSticker) {
 			}
 		case statusInfo := <-playerCh:
 			if currentSongId != statusInfo["songid"] {
-				log.Println("Ratings: song changed to", statusInfo["songid"])
 				clientsSentRating = make([]string, 0)
 			}
 		}
