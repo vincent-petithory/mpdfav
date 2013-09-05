@@ -20,29 +20,11 @@ type songStatusInfo struct {
 }
 
 func incSongPlayCount(songInfo *Info, mpdc *MPDClient) (int, error) {
-	value, err := mpdc.StickerGet(
-		StickerSongType,
-		(*songInfo)["file"],
-		PlaycountSticker,
-	)
+	newval, err := AdjustIntStickerBy(mpdc, PlaycountSticker, (*songInfo)["file"], 1)
 	if err != nil {
 		return -1, err
 	}
-	if len(value) == 0 {
-		value = "0"
-	}
-	intval, err := strconv.Atoi(value)
-	if err != nil {
-		return -1, err
-	}
-	intval += 1
-	err = mpdc.StickerSet(
-		StickerSongType,
-		(*songInfo)["file"],
-		PlaycountSticker,
-		strconv.Itoa(intval),
-	)
-	return intval, err
+	return newval, err
 }
 
 func considerSongPlayed(statusInfo *Info, limit int) bool {

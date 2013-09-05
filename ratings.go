@@ -32,31 +32,11 @@ func rateSong(songInfo *Info, rateMsg string, mpdc *MPDClient) (int, error) {
 		return -1, errors.New(fmt.Sprintf("Invalid rating code: %s", rateMsg))
 	}
 
-	value, err := mpdc.StickerGet(
-		StickerSongType,
-		(*songInfo)["file"],
-		RatingSticker,
-	)
+	newval, err := AdjustIntStickerBy(mpdc, RatingSticker, (*songInfo)["file"], val)
 	if err != nil {
 		return -1, err
 	}
-	if len(value) == 0 {
-		value = "0"
-	}
-	intval, err := strconv.Atoi(value)
-	if err != nil {
-		return -1, err
-	}
-
-	intval += val
-
-	err = mpdc.StickerSet(
-		StickerSongType,
-		(*songInfo)["file"],
-		RatingSticker,
-		strconv.Itoa(intval),
-	)
-	return intval, err
+	return newval, err
 }
 
 func ListenRatings(mpdc *MPDClient, channels []chan SongSticker) {
