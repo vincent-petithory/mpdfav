@@ -20,41 +20,12 @@ func ListenSongStickerChange(songStickerChange chan SongSticker, handler songSti
 	}
 }
 
-func generateBestRatedSongs(mpdc *MPDClient, playlistName string, max int) songStickerChangeHandler {
-	f := func(songSticker SongSticker) {
+func generatePlaylist(mpdc *MPDClient, stickerName string, playlistName string, max int, descending bool) {
 		err := mpdc.PlaylistClear(playlistName)
 		if err != nil {
 			log.Fatal(err)
 		}
-		songStickers, err := mpdc.StickerFind(StickerSongType, "/", RatingSticker)
-		if err != nil {
-			log.Fatal(err)
-		}
-		sort.Sort(sort.Reverse(songStickers))
-		for i, songSticker := range songStickers {
-			rating, err := strconv.Atoi(songSticker.Value)
-			if err != nil {
-				continue
-			}
-			if rating < 1 {
-				continue
-			}
-			mpdc.PlaylistAdd(playlistName, songSticker.Uri)
-			if i >= max {
-				break
-			}
-		}
-	}
-	return songStickerChangeHandler(f)
-}
-
-func generateMostPlayedSongs(mpdc *MPDClient, playlistName string, max int) songStickerChangeHandler {
-	f := func(songSticker SongSticker) {
-		err := mpdc.PlaylistClear(playlistName)
-		if err != nil {
-			log.Fatal(err)
-		}
-		songStickers, err := mpdc.StickerFind(StickerSongType, "/", PlaycountSticker)
+		songStickers, err := mpdc.StickerFind(StickerSongType, "/", stickerName)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -69,6 +40,18 @@ func generateMostPlayedSongs(mpdc *MPDClient, playlistName string, max int) song
 				break
 			}
 		}
+	}
+
+func generateBestRatedSongs(mpdc *MPDClient, playlistName string, max int) songStickerChangeHandler {
+	f := func(songSticker SongSticker) {
+		generatePlaylist(mpdc, songSticker.Name, playlistName, max, true)
+	}
+	return songStickerChangeHandler(f)
+}
+
+func generateMostPlayedSongs(mpdc *MPDClient, playlistName string, max int) songStickerChangeHandler {
+	f := func(songSticker SongSticker) {
+		generatePlaylist(mpdc, songSticker.Name, playlistName, max, true)
 	}
 	return songStickerChangeHandler(f)
 }
