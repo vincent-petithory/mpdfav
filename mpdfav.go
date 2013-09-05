@@ -10,16 +10,16 @@ import (
 var noRatings = flag.Bool("no-ratings", false, "Disable ratings service")
 var noPlaycounts = flag.Bool("no-playcounts", false, "Disable playcounts service")
 
-func startMpdService(mpdc *MPDClient, service func(*MPDClient, []chan songMetadata), songMetadataChangeHandlers []songMetadataChangeHandler, wg *sync.WaitGroup) {
-	wg.Add(len(songMetadataChangeHandlers))
-	channels := make([]chan songMetadata, len(songMetadataChangeHandlers))
-	for i, songMetadataChangeHandler := range songMetadataChangeHandlers {
-		ch := make(chan songMetadata)
+func startMpdService(mpdc *MPDClient, service func(*MPDClient, []chan SongSticker), songStickerChangeHandlers []songStickerChangeHandler, wg *sync.WaitGroup) {
+	wg.Add(len(songStickerChangeHandlers))
+	channels := make([]chan SongSticker, len(songStickerChangeHandlers))
+	for i, songStickerChangeHandler := range songStickerChangeHandlers {
+		ch := make(chan SongSticker)
 		channels[i] = ch
-		handler := songMetadataChangeHandler
+		handler := songStickerChangeHandler
 		go func() {
 			defer wg.Done()
-			ListenSongMetadataChange(ch, handler)
+			ListenSongStickerChange(ch, handler)
 		}()
 	}
 	wg.Add(1)
@@ -44,11 +44,11 @@ func main() {
 	defer mpdc.Close()
 
 	if !*noPlaycounts {
-		startMpdService(mpdc, RecordPlayCounts, []songMetadataChangeHandler{generateMostPlayedSongs(mpdc, "Most Played",50)}, &wg)
+		startMpdService(mpdc, RecordPlayCounts, []songStickerChangeHandler{generateMostPlayedSongs(mpdc, "Most Played", 50)}, &wg)
 		log.Println("Started Playcounts service... ")
 	}
 	if !*noRatings {
-		startMpdService(mpdc, ListenRatings, []songMetadataChangeHandler{generateBestRatedSongs(mpdc, "Best Rated", 50)}, &wg)
+		startMpdService(mpdc, ListenRatings, []songStickerChangeHandler{generateBestRatedSongs(mpdc, "Best Rated", 50)}, &wg)
 		log.Println("Started Ratings service... ")
 	}
 

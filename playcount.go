@@ -70,7 +70,7 @@ func checkSongChange(si *songStatusInfo, mpdc *MPDClient) (bool, error) {
 	return false, nil
 }
 
-func processStateUpdate(si *songStatusInfo, mpdc *MPDClient, channels []chan songMetadata) error {
+func processStateUpdate(si *songStatusInfo, mpdc *MPDClient, channels []chan SongSticker) error {
 	changed, err := checkSongChange(si, mpdc)
 	if err != nil {
 		return err
@@ -81,11 +81,11 @@ func processStateUpdate(si *songStatusInfo, mpdc *MPDClient, channels []chan son
 			return err
 		}
 
-		songMetadata := songMetadata{si.SongInfo["file"], PlaycountSticker, strconv.Itoa(playcount)}
+		songSticker := SongSticker{si.SongInfo["file"], PlaycountSticker, strconv.Itoa(playcount)}
 		for _, channel := range channels {
 			c := channel
 			go func() {
-				c <- songMetadata
+				c <- songSticker
 			}()
 		}
 		log.Println(fmt.Sprintf("Playcounts: %s playcount=%d", si.SongInfo["Title"], playcount))
@@ -103,7 +103,7 @@ func processStateUpdate(si *songStatusInfo, mpdc *MPDClient, channels []chan son
 	return nil
 }
 
-func RecordPlayCounts(mpdc *MPDClient, channels []chan songMetadata) {
+func RecordPlayCounts(mpdc *MPDClient, channels []chan SongSticker) {
 	statusInfo, err := mpdc.Status()
 	if err != nil {
 		panic(err)

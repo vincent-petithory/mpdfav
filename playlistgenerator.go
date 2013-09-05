@@ -1,33 +1,27 @@
 package main
 
 import (
-	"log"
 	. "github.com/vincent-petithory/mpdclient"
+	"log"
 	"sort"
 	"strconv"
 )
 
-type songMetadata struct {
-	Uri      string
-	Metadata string
-	Value    string
-}
+type songStickerChangeHandler func(SongSticker)
 
-type songMetadataChangeHandler func(songMetadata)
-
-func ListenSongMetadataChange(songMetadataChange chan songMetadata, handler songMetadataChangeHandler) {
+func ListenSongStickerChange(songStickerChange chan SongSticker, handler songStickerChangeHandler) {
 	for {
-		songMetadata, ok := <-songMetadataChange
+		songSticker, ok := <-songStickerChange
 		if ok {
-			handler(songMetadata)
+			handler(songSticker)
 		} else {
 			return
 		}
 	}
 }
 
-func generateBestRatedSongs(mpdc *MPDClient, playlistName string, max int) songMetadataChangeHandler {
-	f := func(songMetadata songMetadata) {
+func generateBestRatedSongs(mpdc *MPDClient, playlistName string, max int) songStickerChangeHandler {
+	f := func(songSticker SongSticker) {
 		err := mpdc.PlaylistClear(playlistName)
 		if err != nil {
 			log.Fatal(err)
@@ -51,11 +45,11 @@ func generateBestRatedSongs(mpdc *MPDClient, playlistName string, max int) songM
 			}
 		}
 	}
-	return songMetadataChangeHandler(f)
+	return songStickerChangeHandler(f)
 }
 
-func generateMostPlayedSongs(mpdc *MPDClient, playlistName string, max int) songMetadataChangeHandler {
-	f := func(songMetadata songMetadata) {
+func generateMostPlayedSongs(mpdc *MPDClient, playlistName string, max int) songStickerChangeHandler {
+	f := func(songSticker SongSticker) {
 		err := mpdc.PlaylistClear(playlistName)
 		if err != nil {
 			log.Fatal(err)
@@ -76,5 +70,5 @@ func generateMostPlayedSongs(mpdc *MPDClient, playlistName string, max int) song
 			}
 		}
 	}
-	return songMetadataChangeHandler(f)
+	return songStickerChangeHandler(f)
 }
