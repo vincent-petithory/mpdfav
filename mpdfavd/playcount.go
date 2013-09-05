@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	. "github.com/vincent-petithory/mpdclient"
+	. "github.com/vincent-petithory/mpdfav"
 	"log"
 	"strconv"
 	"time"

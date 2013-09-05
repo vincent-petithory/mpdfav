@@ -1,4 +1,4 @@
-package main
+package mpdfav
 
 import (
 	. "github.com/vincent-petithory/mpdclient"

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	. "github.com/vincent-petithory/mpdclient"
+	. "github.com/vincent-petithory/mpdfav"
 	"log"
 	"strconv"
 )
