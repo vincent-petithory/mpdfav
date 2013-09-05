@@ -125,14 +125,12 @@ func RecordPlayCounts(mpdc *MPDClient, channels []chan SongSticker) {
 		select {
 		case <-pollCh:
 			if !ignorePoll {
-				log.Println("Polling status")
 				err = processStateUpdate(&si, mpdc, channels)
 				if err != nil {
 					log.Println(err)
 				}
 			}
 		case <-idleSub.Ch:
-			log.Println("Fetching status on response to 'idle'")
 			err := processStateUpdate(&si, mpdc, channels)
 			if err != nil {
 				log.Println(err)
