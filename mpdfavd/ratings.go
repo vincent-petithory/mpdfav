@@ -13,6 +13,8 @@ const (
 	RatingsChannel = "ratings"
 )
 
+var ErrInvalidRatingCode = errors.New("ratings: invalid rating code")
+
 func rateSong(songInfo *Info, rateMsg string, mpdc *MPDClient) (int, error) {
 	// fail fast if the rateMsg is invalid
 	var val int
@@ -29,7 +31,7 @@ func rateSong(songInfo *Info, rateMsg string, mpdc *MPDClient) (int, error) {
 		val = 0
 	}
 	if val == 0 {
-		return -1, errors.New(fmt.Sprintf("Invalid rating code: %s", rateMsg))
+		return -1, ErrInvalidRatingCode
 	}
 
 	newval, err := AdjustIntStickerBy(mpdc, RatingSticker, (*songInfo)["file"], val)
@@ -111,6 +113,8 @@ func ListenRatings(mpdc *MPDClient, channels []chan SongSticker) {
 								c <- songSticker
 							}()
 						}
+					} else if err == ErrInvalidRatingCode {
+						log.Println(err)
 					} else {
 						log.Panic(err)
 					}
