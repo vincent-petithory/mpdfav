@@ -10,7 +10,7 @@ import (
 var noRatings = flag.Bool("no-ratings", false, "Disable ratings service")
 var noPlaycounts = flag.Bool("no-playcounts", false, "Disable playcounts service")
 
-func startMpdService(mpdc *MPDClient, service func(*MPDClient, []chan SongSticker), songStickerChangeHandlers []songStickerChangeHandler, wg *sync.WaitGroup) {
+func startMpdService(mpdc *MPDClient, service func(*MPDClient, []chan SongSticker, chan bool), songStickerChangeHandlers []songStickerChangeHandler, wg *sync.WaitGroup, gate *Gate) {
 	wg.Add(len(songStickerChangeHandlers))
 	channels := make([]chan SongSticker, len(songStickerChangeHandlers))
 	for i, songStickerChangeHandler := range songStickerChangeHandlers {
@@ -25,16 +25,18 @@ func startMpdService(mpdc *MPDClient, service func(*MPDClient, []chan SongSticke
 	wg.Add(1)
 	go func() {
 		defer func() {
-			wg.Done()
 			for i, _ := range channels {
 				close(channels[i])
 			}
+			// Notify all services to shutdown
+			gate.Open()
+			wg.Done()
 		}()
-		service(mpdc, channels)
+		service(mpdc, channels, gate.Waiter())
 	}()
 }
 
-func main() {
+func startMpdServices() {
 	var wg sync.WaitGroup
 
 	mpdc, err := Connect("localhost", 6600)
@@ -43,14 +45,23 @@ func main() {
 	}
 	defer mpdc.Close()
 
+	gate := NewGate()
+
 	if !*noPlaycounts {
-		startMpdService(mpdc, RecordPlayCounts, []songStickerChangeHandler{generateMostPlayedSongs(mpdc, "Most Played", 50)}, &wg)
+		startMpdService(mpdc, RecordPlayCounts, []songStickerChangeHandler{generateMostPlayedSongs(mpdc, "Most Played", 50)}, &wg, &gate)
 		log.Println("Started Playcounts service... ")
 	}
 	if !*noRatings {
-		startMpdService(mpdc, ListenRatings, []songStickerChangeHandler{generateBestRatedSongs(mpdc, "Best Rated", 50)}, &wg)
+		startMpdService(mpdc, ListenRatings, []songStickerChangeHandler{generateBestRatedSongs(mpdc, "Best Rated", 50)}, &wg, &gate)
 		log.Println("Started Ratings service... ")
 	}
-
 	wg.Wait()
+}
+
+func main() {
+	log.SetFlags(log.LstdFlags | log.Lmicroseconds | log.Lshortfile)
+	for {
+		startMpdServices()
+		log.Println("Restarting...")
+	}
 }

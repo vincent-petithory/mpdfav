@@ -85,7 +85,12 @@ func processStateUpdate(si *songStatusInfo, mpdc *MPDClient, channels []chan Son
 	return nil
 }
 
-func RecordPlayCounts(mpdc *MPDClient, channels []chan SongSticker) {
+func RecordPlayCounts(mpdc *MPDClient, channels []chan SongSticker, quit chan bool) {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Printf("Panic in RecordPlayCounts: %s\n", err)
+		}
+	}()
 	statusInfo, err := mpdc.Status()
 	if err != nil {
 		log.Panic(err)
@@ -120,6 +125,8 @@ func RecordPlayCounts(mpdc *MPDClient, channels []chan SongSticker) {
 
 			// Suspend poll goroutine if player is stopped or paused
 			ignorePoll = si.StatusInfo["state"] != "play"
+		case <-quit:
+			return
 		}
 	}
 }

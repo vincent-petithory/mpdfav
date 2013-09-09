@@ -41,7 +41,12 @@ func rateSong(songInfo *Info, rateMsg string, mpdc *MPDClient) (int, error) {
 	return newval, err
 }
 
-func ListenRatings(mpdc *MPDClient, channels []chan SongSticker) {
+func ListenRatings(mpdc *MPDClient, channels []chan SongSticker, quit chan bool) {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Printf("Panic in ListenRatings: %s\n", err)
+		}
+	}()
 	err := mpdc.Subscribe(RatingsChannel)
 	if err != nil {
 		log.Panic(err)
@@ -128,6 +133,8 @@ func ListenRatings(mpdc *MPDClient, channels []chan SongSticker) {
 			if currentSongId != statusInfo["songid"] {
 				clientsSentRating = make([]string, 0)
 			}
+		case <-quit:
+			return
 		}
 	}
 }
