@@ -10,37 +10,33 @@ import (
 type songStickerChangeHandler func(SongSticker)
 
 func ListenSongStickerChange(songStickerChange chan SongSticker, handler songStickerChangeHandler) {
-	for {
-		songSticker, ok := <-songStickerChange
-		if ok {
-			handler(songSticker)
-		} else {
-			return
-		}
+	for songSticker := range songStickerChange {
+		handler(songSticker)
 	}
 }
 
 func generatePlaylist(mpdc *MPDClient, stickerName string, playlistName string, max int, descending bool) {
-		err := mpdc.PlaylistClear(playlistName)
+	log.Printf("playlist generator: regenerating %s\n", playlistName)
+	err := mpdc.PlaylistClear(playlistName)
+	if err != nil {
+		log.Panic(err)
+	}
+	songStickers, err := mpdc.StickerFind(StickerSongType, "/", stickerName)
+	if err != nil {
+		log.Panic(err)
+	}
+	sort.Sort(sort.Reverse(songStickers))
+	for i, songSticker := range songStickers {
+		_, err = strconv.Atoi(songSticker.Value)
 		if err != nil {
-			log.Fatal(err)
+			continue
 		}
-		songStickers, err := mpdc.StickerFind(StickerSongType, "/", stickerName)
-		if err != nil {
-			log.Fatal(err)
-		}
-		sort.Sort(sort.Reverse(songStickers))
-		for i, songSticker := range songStickers {
-			_, err = strconv.Atoi(songSticker.Value)
-			if err != nil {
-				continue
-			}
-			mpdc.PlaylistAdd(playlistName, songSticker.Uri)
-			if i >= max {
-				break
-			}
+		mpdc.PlaylistAdd(playlistName, songSticker.Uri)
+		if i >= max {
+			break
 		}
 	}
+}
 
 func generateBestRatedSongs(mpdc *MPDClient, playlistName string, max int) songStickerChangeHandler {
 	f := func(songSticker SongSticker) {
