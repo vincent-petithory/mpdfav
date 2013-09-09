@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	. "github.com/vincent-petithory/mpdclient"
 	. "github.com/vincent-petithory/mpdfav"
 	"log"
@@ -71,7 +70,7 @@ func processStateUpdate(si *songStatusInfo, mpdc *MPDClient, channels []chan Son
 				c <- songSticker
 			}()
 		}
-		log.Println(fmt.Sprintf("Playcounts: %s playcount=%d", si.SongInfo["Title"], playcount))
+		log.Printf("playcounts: %s playcount=%d\n", si.SongInfo["Title"], playcount)
 	}
 	// We store the current song after processing,
 	// since that should be the next song playing already.
@@ -89,11 +88,11 @@ func processStateUpdate(si *songStatusInfo, mpdc *MPDClient, channels []chan Son
 func RecordPlayCounts(mpdc *MPDClient, channels []chan SongSticker) {
 	statusInfo, err := mpdc.Status()
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 	songInfo, err := mpdc.CurrentSong()
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 
 	si := songStatusInfo{}
@@ -110,13 +109,13 @@ func RecordPlayCounts(mpdc *MPDClient, channels []chan SongSticker) {
 			if !ignorePoll {
 				err = processStateUpdate(&si, mpdc, channels)
 				if err != nil {
-					log.Println(err)
+					log.Panic(err)
 				}
 			}
 		case <-idleSub.Ch:
 			err := processStateUpdate(&si, mpdc, channels)
 			if err != nil {
-				log.Println(err)
+				log.Panic(err)
 			}
 
 			// Suspend poll goroutine if player is stopped or paused

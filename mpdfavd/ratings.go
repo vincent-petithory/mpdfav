@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	. "github.com/vincent-petithory/mpdclient"
 	. "github.com/vincent-petithory/mpdfav"
 	"log"
@@ -43,12 +42,12 @@ func rateSong(songInfo *Info, rateMsg string, mpdc *MPDClient) (int, error) {
 func ListenRatings(mpdc *MPDClient, channels []chan SongSticker) {
 	err := mpdc.Subscribe(RatingsChannel)
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 
 	statusInfo, err := mpdc.Status()
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 	currentSongId := (*statusInfo)["songid"]
 
@@ -65,7 +64,7 @@ func ListenRatings(mpdc *MPDClient, channels []chan SongSticker) {
 			case "message":
 				msgs, err := mpdc.ReadMessages()
 				if err != nil {
-					log.Println(err)
+					log.Panic(err)
 				} else {
 					for _, msg := range msgs {
 						msgsCh <- msg
@@ -74,7 +73,7 @@ func ListenRatings(mpdc *MPDClient, channels []chan SongSticker) {
 			case "player":
 				statusInfo, err := mpdc.Status()
 				if err != nil {
-					log.Println(err)
+					log.Panic(err)
 				} else {
 					playerCh <- *statusInfo
 				}
@@ -113,10 +112,10 @@ func ListenRatings(mpdc *MPDClient, channels []chan SongSticker) {
 							}()
 						}
 					} else {
-						log.Println(err)
+						log.Panic(err)
 					}
 				} else {
-					log.Println(err)
+					log.Panic(err)
 				}
 			} else {
 				log.Printf("Client %s already rated\n", thisClientId)
