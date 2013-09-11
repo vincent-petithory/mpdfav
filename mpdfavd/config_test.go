@@ -7,14 +7,16 @@ import (
 
 func TestConfig(t *testing.T) {
 	c := defaultConfig()
-	expectedConfig := config{false, "Most Played", true, "Best Songs", "192.168.0.255", 6601, "guessme"}
+	expectedConfig := config{false, "Most Played", 30, true, "Best Songs", 20, "192.168.0.255", 6601, "guessme"}
 
 	// var buf bytes.Buffer
 	var jsonBlob = []byte(`{
 		"PlaycountsEnabled": false,
 		"MostPlayedPlaylistName": "Most Played",
+		"MostPlayedPlaylistLimit": 30,
 		"RatingsEnabled": true,
 		"BestRatedPlaylistName": "Best Songs",
+		"BestRatedPlaylistLimit": 20,
 		"MPDHost": "192.168.0.255",
 		"MPDPort": 6601,
 		"MPDPassword": "guessme"
@@ -31,7 +33,9 @@ func TestConfig(t *testing.T) {
 
 func TestIncompleteConfig(t *testing.T) {
 	c := defaultConfig()
-	expectedConfig := config{false, "Most Played", true, "Best Rated", "192.168.0.255", 6600, ""}
+	expectedConfig := defaultConfig()
+	expectedConfig.PlaycountsEnabled = false
+	expectedConfig.MPDHost = "192.168.0.255"
 
 	var jsonBlob = []byte(`{
 		"PlaycountsEnabled": false,
@@ -42,7 +46,7 @@ func TestIncompleteConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if *c != expectedConfig {
+	if *c != *expectedConfig {
 		t.Fatalf("Expected %v, got %v\n", expectedConfig, *c)
 	}
 }

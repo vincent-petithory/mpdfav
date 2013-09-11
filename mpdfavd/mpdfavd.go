@@ -60,11 +60,11 @@ func startMpdServices() {
 	gate := NewGate()
 
 	if conf.PlaycountsEnabled {
-		startMpdService(mpdc, RecordPlayCounts, []songStickerChangeHandler{generateMostPlayedSongs(mpdc, conf.MostPlayedPlaylistName, 50)}, &wg, &gate)
+		startMpdService(mpdc, RecordPlayCounts, []songStickerChangeHandler{generateMostPlayedSongs(mpdc, conf.MostPlayedPlaylistName, conf.MostPlayedPlaylistLimit)}, &wg, &gate)
 		log.Println("Started Playcounts service...")
 	}
 	if conf.RatingsEnabled {
-		startMpdService(mpdc, ListenRatings, []songStickerChangeHandler{generateBestRatedSongs(mpdc, conf.BestRatedPlaylistName, 50)}, &wg, &gate)
+		startMpdService(mpdc, ListenRatings, []songStickerChangeHandler{generateBestRatedSongs(mpdc, conf.BestRatedPlaylistName, conf.BestRatedPlaylistLimit)}, &wg, &gate)
 		log.Println("Started Ratings service...")
 	}
 	wg.Wait()

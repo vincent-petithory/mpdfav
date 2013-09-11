@@ -8,17 +8,19 @@ import (
 )
 
 type config struct {
-	PlaycountsEnabled      bool
-	MostPlayedPlaylistName string
-	RatingsEnabled         bool
-	BestRatedPlaylistName  string
-	MPDHost                string
-	MPDPort                uint
-	MPDPassword            string
+	PlaycountsEnabled       bool
+	MostPlayedPlaylistName  string
+	MostPlayedPlaylistLimit uint
+	RatingsEnabled          bool
+	BestRatedPlaylistName   string
+	BestRatedPlaylistLimit  uint
+	MPDHost                 string
+	MPDPort                 uint
+	MPDPassword             string
 }
 
 func defaultConfig() *config {
-	c := config{true, "Most Played", true, "Best Rated", "localhost", 6600, ""}
+	c := config{true, "Most Played", 50, true, "Best Rated", 50, "localhost", 6600, ""}
 	return &c
 }
 
