@@ -32,7 +32,7 @@ func generatePlaylist(mpdc *MPDClient, stickerName string, playlistName string, 
 			continue
 		}
 		mpdc.PlaylistAdd(playlistName, songSticker.Uri)
-		if uint(i) >= max {
+		if uint(i+1) >= max {
 			break
 		}
 	}
