@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	. "github.com/vincent-petithory/mpdclient"
+	. "github.com/vincent-petithory/mpdfav"
 	"log"
 	"os"
 	"path/filepath"
@@ -13,7 +14,7 @@ import (
 var (
 	defaultConfigFile string = os.ExpandEnv("$HOME/.mpdfav.json")
 	configFile        string
-	conf              *config
+	conf              *Config
 )
 
 func startMpdService(mpdc *MPDClient, service func(*MPDClient, []chan SongSticker, chan bool), songStickerChangeHandlers []songStickerChangeHandler, wg *sync.WaitGroup, gate *Gate) {
@@ -76,7 +77,7 @@ func init() {
 }
 
 func main() {
-	conf = defaultConfig()
+	conf = DefaultConfig()
 	flag.Parse()
 	f, err := os.Open(configFile)
 	if err != nil {

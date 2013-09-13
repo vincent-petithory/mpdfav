@@ -1,4 +1,4 @@
-package main
+package mpdfav
 
 import (
 	"bytes"
@@ -6,8 +6,8 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	c := defaultConfig()
-	expectedConfig := config{false, "Most Played", 30, true, "Best Songs", 20, "192.168.0.255", 6601, "guessme"}
+	c := DefaultConfig()
+	expectedConfig := Config{false, "Most Played", 30, true, "Best Songs", 20, "192.168.0.255", 6601, "guessme"}
 
 	// var buf bytes.Buffer
 	var jsonBlob = []byte(`{
@@ -32,8 +32,8 @@ func TestConfig(t *testing.T) {
 }
 
 func TestIncompleteConfig(t *testing.T) {
-	c := defaultConfig()
-	expectedConfig := defaultConfig()
+	c := DefaultConfig()
+	expectedConfig := DefaultConfig()
 	expectedConfig.PlaycountsEnabled = false
 	expectedConfig.MPDHost = "192.168.0.255"
 
@@ -57,14 +57,14 @@ func TestFullCycleReadWrite(t *testing.T) {
 		"MPDHost": "192.168.0.255"
 		}`)
 
-	c1 := defaultConfig()
+	c1 := DefaultConfig()
 	c1.MPDPassword = "random"
 	c1.Write(jsonBlob)
 
 	var buf bytes.Buffer
 	c1.WriteTo(&buf)
 
-	c2 := defaultConfig()
+	c2 := DefaultConfig()
 	c2.ReadFrom(&buf)
 	if *c1 != *c2 {
 		t.Fatalf("%v and %v do not match\n", c1, c2)

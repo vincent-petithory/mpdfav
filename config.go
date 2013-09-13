@@ -1,4 +1,4 @@
-package main
+package mpdfav
 
 import (
 	"bytes"
@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 )
 
-type config struct {
+type Config struct {
 	PlaycountsEnabled       bool
 	MostPlayedPlaylistName  string
 	MostPlayedPlaylistLimit uint
@@ -19,12 +19,12 @@ type config struct {
 	MPDPassword             string
 }
 
-func defaultConfig() *config {
-	c := config{true, "Most Played", 50, true, "Best Rated", 50, "localhost", 6600, ""}
+func DefaultConfig() *Config {
+	c := Config{true, "Most Played", 50, true, "Best Rated", 50, "localhost", 6600, ""}
 	return &c
 }
 
-func (c *config) ReadFrom(r io.Reader) (n int64, err error) {
+func (c *Config) ReadFrom(r io.Reader) (n int64, err error) {
 	data, err := ioutil.ReadAll(r)
 	n = int64(len(data))
 	if err != nil {
@@ -34,24 +34,24 @@ func (c *config) ReadFrom(r io.Reader) (n int64, err error) {
 	return
 }
 
-func (c *config) Read(p []byte) (n int, err error) {
+func (c *Config) Read(p []byte) (n int, err error) {
 	data, err := json.Marshal(c)
 	p = data
 	return len(p), err
 }
 
-func (c *config) Write(p []byte) (n int, err error) {
+func (c *Config) Write(p []byte) (n int, err error) {
 	err = json.Unmarshal(p, c)
 	return len(p), err
 }
 
-func (c *config) WriteTo(w io.Writer) (n int64, err error) {
+func (c *Config) WriteTo(w io.Writer) (n int64, err error) {
 	data, err := json.Marshal(c)
 	if err != nil {
 		return int64(len(data)), err
 	}
 	// On writing to a Writer, it makes sense to
-	// use a pretty-printed
+	// use a pretty-printed output
 	var buf bytes.Buffer
 	err = json.Indent(&buf, data, "", "  ")
 	if err != nil {
