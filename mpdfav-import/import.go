@@ -103,7 +103,15 @@ func main() {
 			log.Fatal(err)
 		}
 	case FORMAT_JSON:
-		log.Fatalf("Not implemented\n")
+		f, err = os.Open(filepath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer f.Close()
+		feeder, err = NewJsonFeed(f)
+		if err != nil {
+			log.Fatal(err)
+		}
 	case FORMAT_CSV:
 		log.Fatalf("Not implemented\n")
 	default:
