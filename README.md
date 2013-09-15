@@ -15,9 +15,9 @@ Also, when your tastes change, you won't need to lower the 5 stars songs you lik
 1. [Install Go](http://golang.org/doc/install) if you didn't yet.
 2. Install mpdfav and its dependancies:
 
-    go get github.com/vincent-petithory/mpdfav/mpdfavd
-    # if you also want the import utility (see below)
-    go get github.com/vincent-petithory/mpdfav/mpdfav-import
+        go get github.com/vincent-petithory/mpdfav/mpdfavd
+        # if you also want the import utility (see below)
+        go get github.com/vincent-petithory/mpdfav/mpdfav-import
 
 # Usage
 
