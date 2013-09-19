@@ -28,14 +28,17 @@ import (
 )
 
 const (
-	songPlayedThresholdSeconds = 10
-	tickMillis                 = 900
-	PlaycountSticker           = "playcount"
+	songPlayedPrecision = 4 // Number of uniformly distributed cue points to statisfy
+	tickMillis          = 900
+	PlaycountSticker    = "playcount"
 )
+
+type SongCues []float32
 
 type songStatusInfo struct {
 	StatusInfo Info
 	SongInfo   Info
+	SongCues   SongCues
 }
 
 func incSongPlayCount(songInfo *Info, mpdc *MPDClient) (int, error) {
@@ -46,51 +49,49 @@ func incSongPlayCount(songInfo *Info, mpdc *MPDClient) (int, error) {
 	return newval, err
 }
 
-func considerSongPlayed(statusInfo *Info, limit int) bool {
-	current, total := statusInfo.Progress()
-	if total == 0 || current == 0 {
-		return false
-	}
-	return (total - current) < limit
-}
-
-func checkSongChange(si *songStatusInfo, mpdc *MPDClient) (bool, error) {
-	info, err := mpdc.Status()
-	if err != nil {
-		return false, err
-	}
-	defer func() {
-		si.StatusInfo = *info
-	}()
-
-	if (*info)["songid"] != si.StatusInfo["songid"] {
-		if played := considerSongPlayed(&si.StatusInfo, songPlayedThresholdSeconds); played {
-			return true, nil
+func considerSongPlayed(songCues SongCues, precision uint) bool {
+	var cueStep float32 = 1.0 / (float32(precision) + 1.0)
+	var curCue float32 = cueStep
+	for _, cue := range songCues {
+		for curCue < cue && cue < curCue+cueStep {
+			curCue += cueStep
+		}
+		if curCue >= 1.0 {
+			return true
 		}
 	}
-	return false, nil
+	return false
 }
 
 func processStateUpdate(si *songStatusInfo, mpdc *MPDClient, channels []chan SongSticker) error {
-	changed, err := checkSongChange(si, mpdc)
+	info, err := mpdc.Status()
 	if err != nil {
 		return err
 	}
-	if changed {
-		playcount, err := incSongPlayCount(&si.SongInfo, mpdc)
-		if err != nil {
-			return err
-		}
 
-		songSticker := SongSticker{si.SongInfo["file"], PlaycountSticker, strconv.Itoa(playcount)}
-		for _, channel := range channels {
-			c := channel
-			go func() {
-				c <- songSticker
-			}()
+	if (*info)["songid"] != si.StatusInfo["songid"] {
+		songPlayed := considerSongPlayed(si.SongCues, songPlayedPrecision)
+		if songPlayed {
+			playcount, err := incSongPlayCount(&si.SongInfo, mpdc)
+			if err != nil {
+				return err
+			}
+
+			songSticker := SongSticker{si.SongInfo["file"], PlaycountSticker, strconv.Itoa(playcount)}
+			for _, channel := range channels {
+				c := channel
+				go func() {
+					c <- songSticker
+				}()
+			}
+			log.Printf("playcounts: %s playcount=%d\n", si.SongInfo["Title"], playcount)
 		}
-		log.Printf("playcounts: %s playcount=%d\n", si.SongInfo["Title"], playcount)
+		si.SongCues = make(SongCues, 0)
+	} else {
+		current, total := si.StatusInfo.Progress()
+		si.SongCues = append(si.SongCues, float32(current)/float32(total))
 	}
+	si.StatusInfo = *info
 	// We store the current song after processing,
 	// since that should be the next song playing already.
 	songInfo, err := mpdc.CurrentSong()
@@ -119,9 +120,7 @@ func RecordPlayCounts(mpdc *MPDClient, channels []chan SongSticker, quit chan bo
 		log.Panic(err)
 	}
 
-	si := songStatusInfo{}
-	si.StatusInfo = *statusInfo
-	si.SongInfo = *songInfo
+	si := songStatusInfo{*statusInfo, *songInfo, make([]float32, 0)}
 
 	idleSub := mpdc.Idle("player")
 	pollCh := time.Tick(tickMillis * time.Millisecond)
