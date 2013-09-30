@@ -132,7 +132,15 @@ func main() {
 			log.Fatal(err)
 		}
 	case FORMAT_CSV:
-		log.Fatalf("Not implemented\n")
+		f, err = os.Open(filepath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer f.Close()
+		feeder, err = NewCsvFeed(f)
+		if err != nil {
+			log.Fatal(err)
+		}
 	default:
 		PrintHelp()
 		log.Fatalf("Invalid format %s\n", *format)

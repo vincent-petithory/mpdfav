@@ -95,6 +95,3 @@ Here's an example of a file format:
 
 * Limit ratings to one rating per song per client, if possible. (Currently no way to identify clients who sent a rating, since we use mpd channels)
 
-## mpdfav-import
-
-* add csv format support
