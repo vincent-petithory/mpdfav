@@ -63,7 +63,7 @@ For now it knows how to import from the formats below.
 
 * Another MPD sticker DB.
 * JSON; see below.
-* csv. (not implemented yet)
+* csv.
 
 In all file formats, the URIs of the songs are relative to your MPD music directory.
 
@@ -88,6 +88,14 @@ Here's an example of a file format:
         "Value": "2"
       }
     ]
+
+### CSV format
+
+This looks like the following:
+
+        track-01.ogg,playcount,1
+        path/to/yet/another/song.mp3,playcount,4
+        path/to/another/track-02.ogg,rating,2
 
 # Things to improve
 
