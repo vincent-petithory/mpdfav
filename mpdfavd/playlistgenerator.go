@@ -40,7 +40,7 @@ func generatePlaylist(mpdc *MPDClient, stickerName string, playlistName string, 
 	if err != nil {
 		log.Panic(err)
 	}
-	songStickers, err := mpdc.StickerFind(StickerSongType, "/", stickerName)
+	songStickers, err := mpdc.StickerFind(StickerSongType, "", stickerName)
 	if err != nil {
 		log.Panic(err)
 	}
